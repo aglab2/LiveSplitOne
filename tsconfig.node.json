@@ -26,5 +26,10 @@
         "types": ["node"],
         "lib": ["ES2024", "DOM", "WebWorker"]
     },
-    "include": ["vite.config.ts", "src/type-definitions/babel-core-shim.d.ts"]
+    "include": [
+        "buildCore.ts",
+        "eslint.config.ts",
+        "vite.config.ts",
+        "src/type-definitions/babel-core-shim.d.ts"
+    ]
 }
