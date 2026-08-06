@@ -1,5 +1,5 @@
-import { execSync } from "child_process";
-import fs from "fs";
+import { execSync } from "node:child_process";
+import fs from "node:fs";
 
 let toolchain = "";
 let profile = "debug";
@@ -8,8 +8,8 @@ let cargoFlags = "";
 let rustFlags =
     "-C target-feature=+bulk-memory,+mutable-globals,+nontrapping-fptoint,+sign-ext,+simd128,+extended-const,+multivalue,+reference-types,+tail-call";
 let wasmBindgenFlags = "--encode-into always --target web --reference-types";
-let target = "wasm32-unknown-unknown";
-let targetFolder = target;
+const target = "wasm32-unknown-unknown";
+const targetFolder = target;
 const coreFeatures = [
     "parsing",
     "run-saving",
