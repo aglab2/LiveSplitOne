@@ -140,14 +140,11 @@ function View({
                             return layoutState;
                         }}
                         layoutUrlCache={layoutUrlCache}
-                        allowResize={isDesktop}
+                        allowResize={false}
                         width={layoutWidth}
                         height={layoutHeight}
                         generalSettings={generalSettings}
                         renderer={renderer}
-                        onResize={(width, height) =>
-                            callbacks.onResize(width, height)
-                        }
                         window={window}
                     />
                 </div>
@@ -189,12 +186,8 @@ function View({
                         </button>
                         <button
                             aria-label={resolve(Label.SkipSplit, lang)}
-                            disabled={
-                                currentPhase === TimerPhase.NotRunning ||
-                                currentSplitIndex + 1 >=
-                                    commandSink.segmentsCount()
-                            }
-                            onClick={(_) => commandSink.skipSplit()}
+                            disabled={currentPhase === TimerPhase.NotRunning}
+                            onClick={(_) => commandSink.splitOrStart()}
                         >
                             <ArrowDown strokeWidth={3.5} />
                         </button>
@@ -322,61 +315,9 @@ export function SideBar({
                     )}
                 </span>
             </button>
-            <hr />
-            <h2>{resolve(Label.CompareAgainst, lang)}</h2>
-            <select
-                value={currentComparison}
-                onChange={(e) =>
-                    commandSink.setCurrentComparison(e.target.value)
-                }
-                className={classes.chooseComparison}
-            >
-                {allComparisons.map((comparison) => (
-                    <option>{comparison}</option>
-                ))}
-            </select>
-            <div className={buttonGroupClasses.group}>
-                <button
-                    onClick={(_) => {
-                        commandSink.setCurrentTimingMethod(
-                            TimingMethod.RealTime,
-                        );
-                    }}
-                    className={
-                        currentTimingMethod === TimingMethod.RealTime
-                            ? buttonGroupClasses.pressed
-                            : ""
-                    }
-                >
-                    {resolve(Label.RealTime, lang)}
-                </button>
-                <button
-                    onClick={(_) => {
-                        commandSink.setCurrentTimingMethod(
-                            TimingMethod.GameTime,
-                        );
-                    }}
-                    className={
-                        currentTimingMethod === TimingMethod.GameTime
-                            ? buttonGroupClasses.pressed
-                            : ""
-                    }
-                >
-                    {resolve(Label.GameTime, lang)}
-                </button>
-            </div>
-            <hr />
-            <button onClick={() => callbacks.popOut()}>
-                <PictureInPicture2 strokeWidth={2.5} />
-                {resolve(Label.PopOut, lang)}
-            </button>
             <button onClick={() => callbacks.openMainSettings()}>
                 <Settings strokeWidth={2.5} />
                 {resolve(Label.Settings, lang)}
-            </button>
-            <button onClick={() => callbacks.openAboutView()}>
-                <Info strokeWidth={2.5} />
-                {resolve(Label.About, lang)}
             </button>
         </>
     );
