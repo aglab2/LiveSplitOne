@@ -23,9 +23,10 @@
     "windows": [
       {
         "title": "LiveSplit One",
-        "width": 850,
-        "height": 750,
-        "useHttpsScheme": true
+        "width": 550,
+        "height": 300,
+        "useHttpsScheme": true,
+        "resizable": false
       }
     ],
     "security": {

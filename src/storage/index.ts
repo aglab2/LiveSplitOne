@@ -13,7 +13,7 @@ export type HotkeyConfigSettings = unknown;
 export type LayoutSettings = unknown;
 
 const DEFAULT_LAYOUT_WIDTH = 300;
-const DEFAULT_LAYOUT_HEIGHT = 500;
+const DEFAULT_LAYOUT_HEIGHT = 80;
 
 let db: Option<Promise<IDBPDatabase<unknown>>> = null;
 

@@ -20,7 +20,6 @@ import {
 } from "../livesplit-core";
 import { WebCommandSink } from "../livesplit-core/livesplit_core";
 import { assert } from "./OptionUtil";
-import { showDialog } from "../ui/components/Dialog";
 import { Label, orAutoLang, resolve } from "../localization";
 
 interface Callbacks {
@@ -116,24 +115,6 @@ export class LSOCommandSink {
     public async reset(updateSplits?: boolean): Promise<CommandResult> {
         if (this.locked) {
             return CommandError.Busy;
-        }
-
-        if (updateSplits === undefined && this.timer.currentAttemptHasNewBestTimes()) {
-            const lang = this.callbacks.getLang();
-            const [result] = await showDialog({
-                title: resolve(Label.SaveBestTimesTitle, lang),
-                description:
-                    resolve(Label.SaveBestTimesDescription, lang),
-                buttons: [
-                    resolve(Label.Yes, lang),
-                    resolve(Label.No, lang),
-                    resolve(Label.DontReset, lang),
-                ],
-            });
-            if (result === 2) {
-                return CommandError.RunnerDecidedAgainstReset;
-            }
-            updateSplits = result === 0;
         }
 
         const result: CommandResult = this.timer.reset(updateSplits ?? true);
