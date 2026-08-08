@@ -111,16 +111,8 @@ function View({
         >
             <div>
                 <div
-                    onClick={(_) => {
-                        if (generalSettings.showControlButtons) {
-                            commandSink.splitOrStart();
-                        }
-                    }}
                     style={{
                         width: "fit-content",
-                        cursor: generalSettings.showControlButtons
-                            ? "pointer"
-                            : undefined,
                     }}
                 >
                     <Layout
@@ -189,7 +181,7 @@ function View({
                         </button>
                         <button
                             aria-label={resolve(Label.SkipSplit, lang)}
-                            disabled={currentPhase === TimerPhase.NotRunning}
+                            disabled={currentPhase === TimerPhase.NotRunning || currentPhase === TimerPhase.Ended || currentPhase === TimerPhase.Paused}
                             onClick={(_) => commandSink.splitOrStart()}
                         >
                             <ArrowDown strokeWidth={3.5} />
