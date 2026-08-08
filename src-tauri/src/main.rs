@@ -204,6 +204,9 @@ impl CommandSink for TauriCommandSink {
 }
 
 fn main() {
+    #[cfg(target_os = "linux")]
+    std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+
     let sink = TauriCommandSink(Arc::new(RwLock::new(None)));
     let hotkey_system = RwLock::new(HotkeySystem::new(sink.clone()).ok());
     tauri::Builder::default()
