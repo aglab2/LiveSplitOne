@@ -15,20 +15,11 @@ jobs:
             fail-fast: false
             matrix:
                 label:
-                    - Web
                     - Tauri on Windows
                     - Tauri on Linux
                     - Tauri on macOS ARM
 
                 include:
-                    - label: Web
-                      platform: web
-                      dist_path: dist
-                      os: ubuntu-latest
-                      target: x86_64-unknown-linux-musl
-                      binaryen: x86_64-linux
-                      cargo_bin: /home/runner/.cargo/bin
-
                     - label: Tauri on Windows
                       platform: tauri
                       dist_path: src-tauri/target/dist
@@ -77,7 +68,7 @@ jobs:
                   rustup default nightly
 
             - name: Install binaryen
-              if: github.repository == 'LiveSplit/LiveSplitOne' && github.ref == 'refs/heads/master'
+              if: github.repository == 'aglab2/LiveSplitOne' && github.ref == 'refs/heads/master'
               shell: bash
               env:
                   GH_TOKEN: ${{ github.token }}
@@ -167,7 +158,7 @@ jobs:
               run: npm run tauri:icons
 
             - name: Optimize
-              if: github.repository == 'LiveSplit/LiveSplitOne' && github.ref == 'refs/heads/master'
+              if: github.repository == 'aglab2/LiveSplitOne' && github.ref == 'refs/heads/master'
               shell: bash
               run: |
                   WASM_FILE=$(ls ${{ matrix.dist_path }}/**/*.wasm)
@@ -199,11 +190,11 @@ jobs:
                   fi
 
             - name: Add CNAME file (Web)
-              if: matrix.platform == 'web' && github.repository == 'LiveSplit/LiveSplitOne' && github.ref == 'refs/heads/master'
+              if: matrix.platform == 'web' && github.repository == 'aglab2/LiveSplitOne' && github.ref == 'refs/heads/master'
               run: cp ./.github/workflows/CNAME ./${{ matrix.dist_path }}/CNAME
 
             - name: Deploy (Web)
-              if: matrix.platform == 'web' && github.repository == 'LiveSplit/LiveSplitOne' && github.ref == 'refs/heads/master'
+              if: matrix.platform == 'web' && github.repository == 'aglab2/LiveSplitOne' && github.ref == 'refs/heads/master'
               uses: peaceiris/actions-gh-pages@v4
               with:
                   deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
@@ -212,7 +203,7 @@ jobs:
                   force_orphan: true
 
             - name: Prepare Release (Tauri)
-              if: matrix.platform == 'tauri' && github.repository == 'LiveSplit/LiveSplitOne' && github.ref == 'refs/heads/master'
+              if: matrix.platform == 'tauri' && github.repository == 'aglab2/LiveSplitOne' && github.ref == 'refs/heads/master'
               shell: bash
               run: .github/workflows/build_zip.sh
               env:
@@ -220,7 +211,7 @@ jobs:
                   TARGET: ${{ matrix.binaryen }}
 
             - name: Release (Tauri)
-              if: matrix.platform == 'tauri' && github.repository == 'LiveSplit/LiveSplitOne' && github.ref == 'refs/heads/master'
+              if: matrix.platform == 'tauri' && github.repository == 'aglab2/LiveSplitOne' && github.ref == 'refs/heads/master'
               uses: softprops/action-gh-release@v2
               with:
                   files: LiveSplitOne-*.*
