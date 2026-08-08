@@ -13,7 +13,7 @@ export type HotkeyConfigSettings = unknown;
 export type LayoutSettings = unknown;
 
 const DEFAULT_LAYOUT_WIDTH = 300;
-const DEFAULT_LAYOUT_HEIGHT = 70;
+const DEFAULT_LAYOUT_HEIGHT = 80;
 
 let db: Option<Promise<IDBPDatabase<unknown>>> = null;
 
@@ -226,12 +226,7 @@ export async function loadHotkeys(): Promise<HotkeyConfigSettings> {
 }
 
 export async function loadLayoutDims(): Promise<[number, number]> {
-    const db = await getDb();
-
-    return [
-        (await db.get("settings", "layoutWidth")) ?? DEFAULT_LAYOUT_WIDTH,
-        (await db.get("settings", "layoutHeight")) ?? DEFAULT_LAYOUT_HEIGHT,
-    ];
+    return [ DEFAULT_LAYOUT_WIDTH, DEFAULT_LAYOUT_HEIGHT,];
 }
 
 export async function storeSplitsKey(splitsKey?: number) {
@@ -275,8 +270,8 @@ export async function loadGeneralSettings(): Promise<GeneralSettings> {
     return {
         themeMode: generalSettings.themeMode ?? THEME_MODE_AUTOMATIC,
         frameRate: generalSettings.frameRate ?? FRAME_RATE_AUTOMATIC,
-        showControlButtons: generalSettings.showControlButtons ?? !isTauri,
-        showManualGameTime: generalSettings.showManualGameTime ?? false,
+        showControlButtons: true,
+        showManualGameTime: false,
         saveOnReset: generalSettings.saveOnReset ?? false,
         speedrunComIntegration: generalSettings.speedrunComIntegration ?? true,
         serverUrl: generalSettings.serverUrl,

@@ -145,6 +145,9 @@ function View({
                         height={layoutHeight}
                         generalSettings={generalSettings}
                         renderer={renderer}
+                        onResize={(width, height) =>
+                            callbacks.onResize(width, height)
+                        }
                         window={window}
                     />
                 </div>

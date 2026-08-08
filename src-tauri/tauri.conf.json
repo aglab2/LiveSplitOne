@@ -24,7 +24,7 @@
       {
         "title": "LiveSplit One",
         "width": 550,
-        "height": 300,
+        "height": 250,
         "useHttpsScheme": true,
         "resizable": false
       }
