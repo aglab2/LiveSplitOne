@@ -8,20 +8,18 @@ import {
     storeRunWithoutDisposing,
     storeSplitsKey,
 } from "../../storage";
-import { type Language, Run, Segment, TimerPhase } from "../../livesplit-core";
+import { type Language, Run, RunEditor, Segment, TimerPhase } from "../../livesplit-core";
 import { toast } from "react-toastify";
 import {
     openFileAsArrayBuffer,
     exportFile,
-    convertFileToArrayBuffer,
     FILE_EXT_SPLITS,
 } from "../../util/FileUtil";
-import { type Option, bug, maybeDisposeAndThen } from "../../util/OptionUtil";
-import { DragUpload } from "../components/DragUpload";
+import { type Option, bug, expect, maybeDisposeAndThen } from "../../util/OptionUtil";
 import { type GeneralSettings } from "./MainSettings";
 import { type LSOCommandSink } from "../../util/LSOCommandSink";
 import { showDialog } from "../components/Dialog";
-import { Label, resolve } from "../../localization";
+import { Label, resolve, orAutoLang } from "../../localization";
 import {
     ArrowLeft,
     Circle,
@@ -37,6 +35,7 @@ import {
 
 import classes from "../../css/SplitsSelection.module.css";
 import sidebarClasses from "../../css/Sidebar.module.css";
+import { TextBox } from "../components/TextBox";
 
 export interface EditingInfo {
     splitsKey?: number;
@@ -60,6 +59,7 @@ interface Callbacks {
         sidebarContent: React.JSX.Element,
     ): React.JSX.Element;
     saveSplits(): Promise<void>;
+    setRunData(run: Run): void;
 }
 
 export function SplitsSelection(props: Props) {
@@ -67,6 +67,7 @@ export function SplitsSelection(props: Props) {
     const [splitsInfos, setSplitsInfos] = useState<
         Array<[number, SplitsInfo]> | undefined
     >();
+    const [offsetState, setOffsetState] = useState("0");
     useEffect(() => {
         async function fetchSplitsInfos() {
             const splitsInfos = await getSplitsInfos();
@@ -104,6 +105,8 @@ export function SplitsSelection(props: Props) {
         <View
             {...props}
             splitsInfos={splitsInfos}
+            offsetState={offsetState}
+            setOffsetState={setOffsetState}
             refreshDb={refreshDb}
             lang={lang}
         />,
@@ -124,6 +127,8 @@ function View({
     openedSplitsKey,
     callbacks,
     splitsInfos,
+    offsetState,
+    setOffsetState,
     refreshDb,
     lang,
 }: {
@@ -131,206 +136,36 @@ function View({
     openedSplitsKey: number | undefined;
     callbacks: Callbacks;
     splitsInfos: Array<[number, SplitsInfo]> | undefined;
+    offsetState: string;
+    setOffsetState: (newOffset: string) => void;
     refreshDb: () => Promise<void>;
     lang: Language | undefined;
 }) {
-    const storeRun = async (run: Run) => {
-        try {
-            if (run.len() === 0) {
-                toast.error(resolve(Label.CantImportEmptySplits, lang));
-                return;
-            }
-            await storeRunWithoutDisposing(run, undefined, lang);
-            await refreshDb();
-        } finally {
-            run[Symbol.dispose]();
-        }
-    };
-
-    const addNewSplits = async () => {
+    const addNewSplits = async (offset: string, lang: Language) => {
+        console.log("Adding new splits with offset:", offset);
+        setOffsetState(offset);
         const run = Run.new();
         run.pushSegment(Segment.new(resolve(Label.NewSegmentName, lang)));
-        await storeRun(run);
-    };
 
-    const importSplitsFromArrayBuffer = async (
-        buffer: [ArrayBuffer, File],
-    ): Promise<Option<Error>> => {
-        const [file] = buffer;
-        using result = Run.parseArray(new Uint8Array(file), "");
-        if (result.parsedSuccessfully()) {
-            await storeRun(result.unwrap());
-        } else {
-            return Error(resolve(Label.CouldNotParseSplits, lang));
-        }
-        return;
-    };
-
-    const importSplits = async () => {
-        const splits = await openFileAsArrayBuffer(FILE_EXT_SPLITS);
-        if (splits === undefined) {
-            return;
-        }
-        if (splits instanceof Error) {
-            toast.error(
-                `${resolve(Label.FailedToReadFile, lang)} ${splits.message}`,
-            );
-            return;
-        }
-
-        const result = await importSplitsFromArrayBuffer(splits);
-        if (result != null) {
-            toast.error(
-                `${resolve(Label.FailedToImportSplits, lang)} ${result.message}`,
-            );
-        }
-    };
-
-    const importSplitsFromFile = async (file: File) => {
-        const splits = await convertFileToArrayBuffer(file);
-        if (splits instanceof Error) {
-            toast.error(
-                `${resolve(Label.FailedToReadFile, lang)} ${splits.message}`,
-            );
-            return;
-        }
-
-        const result = await importSplitsFromArrayBuffer(splits);
-        if (result != null) {
-            toast.error(
-                `${resolve(Label.FailedToImportSplits, lang)} ${result.message}`,
-            );
-        }
-    };
-
-    const getRunFromKey = async (key: number): Promise<Run | undefined> => {
-        const splitsData = await loadSplits(key);
-        if (splitsData === undefined) {
-            bug("The splits key is invalid.", lang);
-            return;
-        }
-
-        using result = Run.parseArray(new Uint8Array(splitsData), "");
-
-        if (result.parsedSuccessfully()) {
-            return result.unwrap();
-        } else {
-            bug("Couldn't parse the splits.", lang);
-            return;
-        }
-    };
-
-    const openSplits = async (key: number) => {
-        const isModified = commandSink.hasBeenModified();
-        if (isModified) {
-            const [result] = await showDialog({
-                title: resolve(Label.DiscardChangesTitle, lang),
-                description: resolve(Label.DiscardChangesDescription, lang),
-                buttons: [resolve(Label.Yes, lang), resolve(Label.No, lang)],
-            });
-            if (result === 1) {
-                return;
-            }
-        }
-
-        using run = await getRunFromKey(key);
-        if (run === undefined) {
-            return;
-        }
-        maybeDisposeAndThen(commandSink.setRun(run), () =>
-            toast.error(resolve(Label.LoadedSplitsInvalid, lang)),
+        const editor = expect(
+            RunEditor.new(run),
+            "The Run Editor should always be able to be opened.",
+            lang,
         );
-        callbacks.setSplitsKey(key);
+        editor.parseAndSetOffset(offset, lang);
+        editor.close();
+
+        callbacks.setRunData(run);
     };
 
-    const editSplits = async (key: number) => {
-        const run = await getRunFromKey(key);
-        if (run !== undefined) {
-            callbacks.openRunEditor({ splitsKey: key, run });
-        }
-    };
-
-    const exportSplits = async (key: number, info: SplitsInfo) => {
-        try {
-            const splitsData = await loadSplits(key);
-            if (splitsData === undefined) {
-                throw Error("The splits key is invalid.");
-            }
-
-            exportFile(`${info.game} - ${info.category}.lss`, splitsData);
-        } catch (_) {
-            toast.error(resolve(Label.FailedToExportSplits, lang));
-        }
-    };
-
-    const copySplits = async (key: number) => {
-        await storageCopySplits(key);
-        await refreshDb();
-    };
-
-    const deleteSplits = async (key: number) => {
-        const [result] = await showDialog({
-            title: resolve(Label.DeleteSplitsTitle, lang),
-            description: resolve(Label.DeleteSplitsDescription, lang),
-            buttons: [resolve(Label.Yes, lang), resolve(Label.No, lang)],
-        });
-        if (result !== 0) {
-            return;
-        }
-
-        await storageDeleteSplits(key);
-        if (key === openedSplitsKey) {
-            callbacks.setSplitsKey(undefined);
-            storeSplitsKey(undefined);
-        }
-        await refreshDb();
-    };
-
-    let content;
-
-    if (splitsInfos == null) {
-        content = (
-            <div className={classes.loading}>
-                <div className={classes.loadingText}>
-                    {resolve(Label.Loading, lang)}
-                </div>
-            </div>
-        );
-    } else {
-        content = (
-            <div className={classes.splitsSelectionContainer}>
-                <div className={classes.mainActions}>
-                    <button onClick={addNewSplits}>
-                        <Plus strokeWidth={2.5} />
-                        {resolve(Label.Add, lang)}
-                    </button>
-                    <button onClick={importSplits}>
-                        <Download strokeWidth={2.5} />
-                        {resolve(Label.Import, lang)}
-                    </button>
-                </div>
-                {splitsInfos?.length > 0 && (
-                    <div className={classes.splitsTable}>
-                        {splitsInfos.map(([key, info]) => (
-                            <SavedSplitsRow
-                                openedSplitsKey={openedSplitsKey}
-                                splitsKey={key}
-                                info={info}
-                                openSplits={openSplits}
-                                editSplits={editSplits}
-                                exportSplits={exportSplits}
-                                copySplits={copySplits}
-                                deleteSplits={deleteSplits}
-                                lang={lang}
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
-    }
     return (
-        <DragUpload importSplits={importSplitsFromFile}>{content}</DragUpload>
+        <TextBox
+            value={offsetState}
+            onChange={(e) => addNewSplits(e.target.value, orAutoLang(lang))}
+            onBlur={(_) => {}}
+            invalid={false}
+            label={resolve(Label.StartTimerAt, lang)}
+        />
     );
 }
 

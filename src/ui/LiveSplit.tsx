@@ -633,7 +633,8 @@ export class LiveSplit extends React.Component<Props, State> {
     }
 
     public openSplitsView() {
-        this.changeMenu({ kind: MenuKind.Splits });
+        const run = this.state.commandSink.getRun().clone();
+        this.openRunEditor({ run });
     }
 
     public openLayoutView() {
@@ -773,7 +774,7 @@ export class LiveSplit extends React.Component<Props, State> {
         } else {
             run[Symbol.dispose]();
         }
-        this.openSplitsView();
+        this.openTimerView();
     }
 
     public setSplitsKey(openedSplitsKey?: number) {
@@ -998,6 +999,10 @@ export class LiveSplit extends React.Component<Props, State> {
     private setRun(run: Run, callback: () => void) {
         maybeDisposeAndThen(this.state.commandSink.setRun(run), callback);
         this.setSplitsKey(undefined);
+    }
+
+    setRunData(run: Run) {
+        this.setRun(run, () => {});
     }
 
     private importSplitsFromArrayBuffer(buffer: [ArrayBuffer, File]) {
